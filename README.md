@@ -1,11 +1,11 @@
 # Lievre Term
 
-[lievre](https://github.com/shiroinock/lievre) の端末用フォントです。IBM Plex Mono の英数字と IBM Plex Sans JP の日本語を、ちょうど 1:2 の幅に組み合わせています。
+[lievre](https://github.com/shiroinock/lievre) の等幅フォントです。端末と、Web の等幅（ログ・コマンドの出力・差分・コード・桁をそろえる表など、日本語も含めて丸ごと等幅で組む場面）の両方で使います。IBM Plex Mono の英数字と IBM Plex Sans JP の日本語を、ちょうど 1:2 の幅に組み合わせています。
 
 PlemolJP も同じ2つから作った 1:2 のフォントですが、Lievre Term には次の違いがあります。
 
 1. **lievre 専用の字形**：カードの角と辺、ボタンの両端、フォーカスの括弧を私用領域 U+E500–E509 に入れています。どれもセルの端までつながるので、`@lievre/tui` の枠が途切れずに描けます。
-2. **漢字の縦の位置**：Plex Sans JP の漢字は行の中央より 0.068em 上に寄っています。フォントの中で下げて、セルの中央に置いています（`JP_SHIFT`）。
+2. **漢字の縦の位置**：Plex Sans JP の漢字は、Plex Sans JP の行の中央より 0.07em 上に寄っています。Lievre Term では行の箱（ascent・descent）のほうを動かして、表意文字の字面の枠を行の中央に置いています。Web の 'Lievre Sans'（Plex Sans JP を `ascent-override` で直したもの）と同じ値です。
 3. **英数字の縮め方**：Plex Mono を 5/6 に縮めます。Web の Lievre Mono（`size-adjust: 83.333%`）と同じなので、Web と端末で字の大きさがそろいます。
 4. **幅のあいまいな記号**：`○`・`×`・`−`・`↑`・`↓`・罫線などの幅を、`@lievre/tui` が使う string-width と同じ表で決めています。表は `lievre-term-widths.json` として一緒に配ります。
 
@@ -30,7 +30,7 @@ PlemolJP も同じ2つから作った 1:2 のフォントですが、Lievre Term
 - **人名・地名・古い文書など、JIS 第2水準以上の漢字も出る**：`lievre-term-jp-nf`（記号が要らなければ `lievre-term-jp`）。
 - **日本語はほかのフォントに任せる、英数字と lievre の字形だけ欲しい**：`lievre-term`。端末のフォールバックに日本語のフォントを並べる使い方です。
 - **プロンプトやファイラーのアイコンが要る**：名前に `-nf` の付くもの。
-- **Web で読み込む**：woff2 を使います。日本語は Web では IBM Plex Sans JP を別に読むほうが軽いので、`lievre-term` か `lievre-term-nf` で足ります。
+- **Web の等幅**：`web/` の CSS を読み込みます。日本語も等幅で組むなら `lievre-term-jp`（字の分だけ読み込まれるので、全部入りでも重くなりません）。英数字だけなら `lievre-term`。
 
 ### 日本語の範囲の区切り方
 
@@ -49,7 +49,7 @@ lievre の私用領域 U+E500–U+E53F は、Nerd Fonts 3.5.1 が使っていな
 ## 寸法
 
 - 全角が 1000、半角が 500（UPM 1000）。どの字の送り幅も、幅の表のセルの数 × 500 です。
-- セルの高さは 1.2em（ascent 912、descent 288）。中心は Plex Mono の行の中心を 5/6 にした位置です。
+- セルの高さは 1.2em（ascent 980、descent 220）。中心はベースラインの 0.38em 上です（下の「縦の位置」）。
 - 罫線とブロック（U+2500–259F）は、縦もセルの高さに合わせて引き伸ばすので、上下の行とつながります。
 - Powerline の区切り（U+E0B0–E0D7）は、セルいっぱいに引き伸ばします。そのほかの Nerd Fonts の記号は、セルの幅に合わせて縮め、セルの中央に置きます。
 - 幅の表で 1 セルなのに全角で描かれている字（Plex Mono にない `○` など）は、形を変えずに縮めて半角に収めます。
@@ -57,9 +57,28 @@ lievre の私用領域 U+E500–U+E53F は、Nerd Fonts 3.5.1 が使っていな
 
 寸法の数は [src/lievre_term/config.py](src/lievre_term/config.py) にまとめています。
 
-### 縦の位置の補正
+### 縦の位置
 
-`JP_SHIFT`（既定は -68）だけ、Plex Sans JP の字形をすべて下げます。Plex Sans JP の全角の字面（BASE テーブルの icfb・icft、-75〜835）の中心 380 を、セルの中心 312 に合わせる値です。0 にすると Plex Sans JP の元の位置に戻ります。テストは、代表的な漢字の字面の中心がセルの中心から 12 以内にあることを確かめます。
+決まりは「表意文字の字面の枠を、行の箱の中央に置く」です。Web の 'Lievre Sans' と同じ決まりで、同じ値になります。
+
+- Plex Sans JP の表意文字の字面の枠は -0.12〜0.88em（BASE テーブルの ideo。字の墨の枠 icfb・icft も -0.075〜0.835em）で、中央はベースラインの 0.38em 上です。
+- Plex Sans JP そのままの行の箱（ascent 1.06em、descent 0.44em）の中央は 0.31em 上なので、漢字は 0.07em 上に寄ります。
+- Lievre Term は ascent 0.98em、descent 0.22em にして、行の箱の中央を 0.38em 上に置きます。字形は動かしません（`JP_SHIFT = 0`）。
+- Web の 'Lievre Sans' は `ascent-override: 113%; descent-override: 37%; line-gap-override: 0%` で、同じく中央が 0.38em 上に来ます（(1.13 − 0.37) / 2 = 0.38）。
+
+字形を動かさないのは、Web で本文（Lievre Sans）の中に等幅（Lievre Term）を並べたとき、ブラウザがベースラインで字をそろえるからです。字形を動かすと、等幅の漢字だけが周りより沈みます。行の箱で直すと、ベースラインも漢字の高さも本文とそろいます。
+
+測り方は Web 側と同じで、Chromium の canvas に 10000px で描き、`measureText` から上寄りを (A − D − 墨の上 − (−墨の下)) / 2 で出しました（A・D は fontBoundingBox、墨は actualBoundingBox。正なら中央より下）。400 の値は次のとおりです。
+
+| 字 | Plex Sans JP そのまま | Lievre Sans | Lievre Term |
+|---|--:|--:|--:|
+| 漢字（永・国） | −0.074〜−0.078em | −0.004〜−0.008em | −0.006〜+0.019em |
+| かな（あ） | −0.072〜−0.074em | 約 −0.003em | −0.009em |
+| 英大文字・数字（H・0） | −0.061em | +0.009em | +0.089em |
+
+Lievre Term の英数字は Plex Mono を 5/6 に縮めた字なので、Plex Sans JP の英数字より背が低く、ベースラインを共有すると中央より 0.089em 下に来ます。端末でも英字だけの行は少し下寄りに見えますが、日本語とベースラインがそろうほうを取りました。
+
+テストは、行の箱の中央が字面の枠の中央（0.38em）にあることと、代表的な漢字の墨の中央がそこから 0.012em 以内にあることを確かめます。数は [src/lievre_term/config.py](src/lievre_term/config.py) の `CELL_CENTER`・`ASCENT`・`DESCENT`・`JP_SHIFT` です。
 
 ## 幅の表
 
@@ -97,6 +116,21 @@ nix-darwin や NixOS では、flake の入力に足して `fonts.packages` に�
   fonts.packages = [ inputs.lievre-fonts.packages.${pkgs.system}.lievre-term-jp1-nf ];
 }
 ```
+
+### Web
+
+`result/share/lievre-term/web/`（Releases では `lievre-term-web-<版>.zip` か、バリエーションごとの zip の `web/`）に、バリエーションごとの CSS と、`unicode-range` で分けた woff2（`files/`）があります。CSS は `files/` を相対の URL で読むので、`web/` をそのまま置いて読み込みます。
+
+```html
+<link rel="stylesheet" href="/fonts/lievre-term/lievre-term-jp.css">
+<style>
+  pre, code, .log { font-family: 'Lievre Term JP', monospace; }
+</style>
+```
+
+- 書体名は端末用と同じ（`'Lievre Term JP'` など）で、太さは 400・500・600 です。
+- ファイルは `base`（英数字・記号・罫線・lievre の字形）、`kana`（かな・全角の記号）、`kanji1-0`〜（JIS 第1水準を 500 字ずつ）、`kanji2-0`〜（そのほかの漢字を 1000 字ずつ）、`nf-pl`・`nf`・`nf-md`（Nerd Fonts）に分かれています。ブラウザはページに出る字を含むものだけを読み込みます。英数字だけのページなら `base` の 1 つ（約 30〜60 KB）で、ふつうの日本語のページなら `base`・`kana`・第1水準のいくつか（合わせて 500 KB ほどまで）です。
+- 1つにまとまった woff2 も `woff2/` にあります。
 
 ### GitHub Releases
 

@@ -7,7 +7,7 @@
 
   1. lievre 専用の字形（U+E500–E509）
   2. IBM Plex Mono。5/6 に縮めて幅 500 にする。罫線とブロック（U+2500–259F）は縦もセルに合わせる
-  3. IBM Plex Sans JP（JP1・JP のとき）。JP_SHIFT だけ下げる。幅の表で 1 の字は半角に収める
+  3. IBM Plex Sans JP（JP1・JP のとき）。JP_SHIFT だけ縦に動かす（既定は 0）。幅の表で 1 の字は半角に収める
   4. Symbols Nerd Font Mono（NF のとき）。Powerline の区切りはセルいっぱいに引き伸ばす
 
 どの字も、送り幅は幅の表（widths.py）のセルの数 × 500 にする。
@@ -28,7 +28,7 @@ from fontTools.ttLib.woff2 import compress
 
 from . import config as C
 from . import glyphs as G
-from . import jis
+from . import jis, web
 from . import widths as W
 
 HEIGHT = C.ASCENT - C.DESCENT
@@ -256,18 +256,23 @@ def cmd_fonts(args):
         (out / 'woff2').mkdir(parents=True, exist_ok=True)
     for vid in args.variant or list(C.VARIANTS):
         variant = C.VARIANTS[vid]
+        ttfs = {}
         for css in args.weight or list(C.WEIGHTS):
             weight = C.WEIGHTS[css]
             font = build_font(variant, weight, args.sources, width)
             stem = f'{variant.file_stem}-{weight.style}'
             ttf = out / 'ttf' / f'{stem}.ttf'
             font.save(ttf)
+            ttfs[css] = ttf
             line = f'{ttf.name}: {len(font.getBestCmap())} 字, {ttf.stat().st_size} バイト'
             if not args.no_woff2:
                 woff2 = out / 'woff2' / f'{stem}.woff2'
                 compress(str(ttf), str(woff2))
                 line += f', woff2 {woff2.stat().st_size} バイト'
             print(line, flush=True)
+        if not args.no_woff2:
+            css_path = web.write_web(variant, ttfs, out / 'web')
+            print(f'{css_path.name}: Web 用に分けた woff2 と @font-face', flush=True)
 
 
 def cmd_widths(args):
@@ -285,7 +290,7 @@ def main(argv=None):
     p.add_argument('--out', type=Path, required=True)
     p.add_argument('--variant', action='append', choices=list(C.VARIANTS))
     p.add_argument('--weight', action='append', type=int, choices=list(C.WEIGHTS))
-    p.add_argument('--no-woff2', action='store_true')
+    p.add_argument('--no-woff2', action='store_true', help='woff2 と Web 用の CSS を書かない')
     p.set_defaults(func=cmd_fonts)
     p = sub.add_parser('widths', help='幅の表を JSON で書き出す')
     p.add_argument('--ucd', type=Path, required=True)

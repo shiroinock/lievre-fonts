@@ -58,7 +58,7 @@
           fileset = ./LICENSES;
         };
 
-        # 1つのバリエーションの 400 / 500 / 600 を、ttf と woff2 で。
+        # 1つのバリエーションの 400 / 500 / 600 を、ttf と woff2、Web 用の分けた woff2 と CSS で。
         mkVariant =
           id:
           pkgs.stdenvNoCC.mkDerivation {
@@ -77,6 +77,9 @@
               install -Dm644 -t $out/share/fonts/truetype out/ttf/*.ttf
               # woff2 は Web 用。share/fonts に置くと fontconfig が ttf と二重に拾うので、外に置く。
               install -Dm644 -t $out/share/lievre-term/woff2 out/woff2/*.woff2
+              # Web 用：unicode-range で分けた woff2 と、そのまま読み込める @font-face の CSS。
+              mkdir -p $out/share/lievre-term/web
+              cp -r out/web/. $out/share/lievre-term/web/
               ln -s ../fonts/truetype $out/share/lievre-term/ttf
               cp -r ${licenses}/LICENSES $out/share/lievre-term/LICENSES
               ln -s ${widths}/share/lievre-term/widths.json $out/share/lievre-term/widths.json

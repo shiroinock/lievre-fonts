@@ -1,11 +1,12 @@
 """書き出したフォントの幅と寸法を確かめる。
 
-LIEVRE_TERM_FONTS に、ビルドの出力（ttf/ と widths.json のある場所。nix build の result/share/lievre-term）を渡す。
+LIEVRE_TERM_FONTS に、ビルドの出力（ttf/・web/・widths.json のある場所。nix build の result/share/lievre-term）を渡す。
 LIEVRE_TERM_UCD を渡すと、widths.json が Unicode のデータから作り直したものと同じかも確かめる。
 """
 
 import json
 import os
+import re
 from functools import cache
 from pathlib import Path
 
@@ -14,7 +15,7 @@ from fontTools.ttLib import TTFont
 
 from lievre_term import config as C
 from lievre_term import glyphs as G
-from lievre_term import jis
+from lievre_term import jis, web
 from lievre_term import widths as W
 
 OUT = Path(os.environ.get('LIEVRE_TERM_FONTS', 'result/share/lievre-term'))
@@ -175,3 +176,46 @@ def test_width_table_samples():
 @pytest.mark.skipif('LIEVRE_TERM_UCD' not in os.environ, reason='LIEVRE_TERM_UCD がない')
 def test_width_table_is_built_from_ucd():
     assert W.compute(Path(os.environ['LIEVRE_TERM_UCD'])) == table()
+
+
+def font_faces(css: str):
+    """CSS の @font-face を {'font-family': ..., ...} の並びで返す。"""
+    faces = []
+    for block in re.findall(r'@font-face \{(.*?)\}', css, re.DOTALL):
+        decl = {}
+        for line in block.strip().splitlines():
+            key, _, value = line.strip().rstrip(';').partition(':')
+            decl[key.strip()] = value.strip()
+        faces.append(decl)
+    return faces
+
+
+@pytest.mark.parametrize('variant', list(C.VARIANTS.values()), ids=list(C.VARIANTS))
+def test_web_css_covers_the_font(variant):
+    css = (OUT / 'web' / f'{variant.id}.css').read_text()
+    faces = font_faces(css)
+    assert {f['font-family'] for f in faces} == {f"'{variant.family}'"}
+    for weight in C.WEIGHTS.values():
+        mine = [f for f in faces if f['font-weight'] == str(weight.css)]
+        assert mine, f'{weight.css} の @font-face がない'
+        ttf = font(variant, weight)
+        cmap = ttf.getBestCmap()
+        seen = set()
+        for face in mine:
+            assert face['font-display'] == 'swap' and face['font-style'] == 'normal'
+            ranges = web.parse_unicode_range(face['unicode-range'])
+            assert not (ranges & seen), 'unicode-range が重なっている'
+            seen |= ranges
+            path = OUT / 'web' / re.fullmatch(r"url\('(.+)'\) format\('woff2'\)", face['src'])[1]
+            part = TTFont(path)
+            assert part.flavor == 'woff2'
+            assert set(part.getBestCmap()) == ranges, f'{path.name} の字が unicode-range と違う'
+            assert (part['hhea'].ascent, part['hhea'].descent) == (C.ASCENT, C.DESCENT)
+            for cp, g in part.getBestCmap().items():
+                assert part['hmtx'][g][0] == ttf['hmtx'][cmap[cp]][0]
+        assert seen == set(cmap), 'unicode-range を合わせてもフォントの字にならない'
+
+
+def test_line_center_is_the_ideographic_center():
+    # 表意文字の字面の枠（Plex Sans JP の BASE、-120〜880）の中央を、行の箱の中央に置く。Web の 'Lievre Sans' と同じ。
+    assert (C.ASCENT + C.DESCENT) / 2 == C.CELL_CENTER == (-120 + 880) / 2
