@@ -1,0 +1,30 @@
+# The owner's @claude in an issue, a PR comment or a review runs Claude Code.
+# The job itself lives in shiroinock/workflows; change it there, not here.
+# Pinned to a commit that was read, not @main: the jobs get CLAUDE_CODE_OAUTH_TOKEN, so a change
+# there must not reach this public repository unseen. Renovate raises the SHA in all of these
+# workflows together (and workflows_ref in merge-reservation.yml and pinact.yml).
+name: Claude
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  pull_request_review:
+    types: [submitted]
+  issues:
+    types: [opened, assigned]
+
+permissions: {}
+
+jobs:
+  claude:
+    uses: shiroinock/workflows/.github/workflows/claude.yml@cf3f4ca70d5828616e52159b21d18f5311f0dcbe
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      actions: read
+      id-token: write
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

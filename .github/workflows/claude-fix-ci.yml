@@ -1,0 +1,30 @@
+# When the CI of a PR fails, Claude Code tries to fix the branch and push. When it cannot, it
+# mentions the owner on the PR and labels it 人の手が要る.
+# The job lives in shiroinock/workflows; change it there, not here.
+# Pinned to a commit that was read, not @main: the jobs get CLAUDE_CODE_OAUTH_TOKEN, so a change
+# there must not reach this public repository unseen. Renovate raises the SHA in all of these
+# workflows together (and workflows_ref in merge-reservation.yml and pinact.yml).
+name: Claude で CI を直す
+
+on:
+  # Runs from the default branch's copy of this file, with secrets; the job itself only takes
+  # branches of this repository whose PR a person opened.
+  workflow_run:
+    workflows: [検査] # the name of the CI workflow to watch (.github/workflows/ci.yml)
+    types: [completed]
+
+permissions: {}
+
+jobs:
+  fix:
+    uses: shiroinock/workflows/.github/workflows/claude-fix-ci.yml@cf3f4ca70d5828616e52159b21d18f5311f0dcbe
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+      actions: read
+      id-token: write
+    # with:
+    #   max_attempts: 2
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
