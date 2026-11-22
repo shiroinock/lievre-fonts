@@ -117,6 +117,13 @@ def test_box_drawing_connects(variant, weight):
     _, y0, _, y1 = bounds(f, 0x2502)
     assert y0 <= C.DESCENT and y1 >= C.ASCENT
     assert bounds(f, 0x2588) == (0, C.DESCENT, C.CELL, C.ASCENT)
+    # 網はセルの左下の角から升目を刻み、セルの外へ出ない（隣のセルと模様がつながる）。
+    # 中と濃はセルの端から端まで届く。
+    for cp in G.SHADES:
+        x0, y0, x1, y1 = bounds(f, cp)
+        assert (x0, y0) == (0, C.DESCENT) and x1 <= C.CELL and y1 <= C.ASCENT, f'U+{cp:04X}'
+    for cp in (0x2592, 0x2593):
+        assert bounds(f, cp) == (0, C.DESCENT, C.CELL, C.ASCENT), f'U+{cp:04X}'
 
 
 @pytest.mark.parametrize(

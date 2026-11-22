@@ -156,6 +156,8 @@ def build_font(variant: C.Variant, weight: C.Weight, sources: Path, width: bytea
     for cp, name in G.CODEPOINTS.items():
         gname = add('lievre', name, (1, 0, 0, 1, 0, 0), C.CELL, lambda n=name: G.glyph(n))
         cmap[cp] = gname
+    for cp, name in G.SHADES.items():
+        cmap[cp] = add('lievre', name, (1, 0, 0, 1, 0, 0), C.CELL, lambda n=name: G.shade(n))
 
     layers = [
         (mono, place_box, lambda cp: True),

@@ -198,3 +198,43 @@ def glyph(name):
     else:
         bracket(pen, c, name.endswith('left'))
     return pen.glyph()
+
+
+# 網（U+2591–2593）。Plex Mono の網は点の並びがセルの升目からずれていて、引き伸ばすと上下の端が
+# ほかのブロックとそろわないので、セルを PITCH で割り切る模様を描く。隣のセルと模様がつながる。
+SHADES = {
+    0x2591: 'lievre.shade.light',  # 25%：升目ごとに DOT 角の点
+    0x2592: 'lievre.shade.medium',  # 50%：DOT 角の市松
+    0x2593: 'lievre.shade.dark',  # 75%：light を白黒反転
+}
+PITCH = 100  # CELL（500）と高さ（1200）を割り切る
+DOT = PITCH // 2
+
+
+def _square(pen, x0, y0, x1, y1, hole=False):
+    if hole:  # 穴は反時計回り
+        pen.moveTo((x0, y0))
+        pen.lineTo((x1, y0))
+        pen.lineTo((x1, y1))
+        pen.lineTo((x0, y1))
+        pen.closePath()
+    else:
+        rect(pen, x0, y0, x1, y1)
+
+
+def shade(name):
+    pen = TTGlyphPen(None)
+    cols, rows = CELL // PITCH, (ASCENT - DESCENT) // PITCH
+    if name == 'lievre.shade.dark':
+        rect(pen, 0, DESCENT, CELL, ASCENT)
+    for i in range(cols):
+        for j in range(rows):
+            x, y = i * PITCH, DESCENT + j * PITCH
+            if name == 'lievre.shade.light':
+                _square(pen, x, y, x + DOT, y + DOT)
+            elif name == 'lievre.shade.dark':
+                _square(pen, x, y, x + DOT, y + DOT, hole=True)
+            else:
+                _square(pen, x, y, x + DOT, y + DOT)
+                _square(pen, x + DOT, y + DOT, x + PITCH, y + PITCH)
+    return pen.glyph()
