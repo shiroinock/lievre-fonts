@@ -87,15 +87,17 @@ def parse_unicode_range(text: str) -> set[int]:
     return out
 
 
-def write_subset(ttf: Path, cps: list[int], out: Path):
+def write_subset(ttf: Path, cps: list[int], out: Path, layout: bool = False):
+    """layout が真なら、カーニングなどの OpenType の機能を残す（本文の書体の Lievre Sans）。"""
     opts = subset.Options()
     opts.flavor = 'woff2'
-    opts.layout_features = []
+    opts.layout_features = ['*'] if layout else []
     opts.name_IDs = ['*']
     opts.name_languages = ['*']
     opts.notdef_outline = True
     opts.recalc_timestamp = False
     opts.prune_unicode_ranges = True
+    opts.drop_tables = [*opts.drop_tables, 'meta']  # 対応する言語の一覧。Web 用には要らない
     font = TTFont(ttf)
     sub = subset.Subsetter(opts)
     sub.populate(unicodes=cps)
@@ -104,20 +106,22 @@ def write_subset(ttf: Path, cps: list[int], out: Path):
     font.save(out)
 
 
-def write_web(variant: C.Variant, ttfs: dict[int, Path], out: Path) -> Path:
+def write_web(
+    variant: C.Variant, ttfs: dict[int, Path], out: Path, generic: str = 'monospace', layout: bool = False
+) -> Path:
     """variant の CSS（out/<id>.css）と分けた woff2（out/files/）を書き、CSS の場所を返す。"""
     files = out / 'files'
     files.mkdir(parents=True, exist_ok=True)
     blocks = [
         f'/* {variant.family} {C.VERSION}. SIL Open Font License 1.1（LICENSES/OFL.txt）。 */',
-        f"/* 使い方：font-family: '{variant.family}', monospace; */",
+        f"/* 使い方：font-family: '{variant.family}', {generic}; */",
     ]
     for css_weight, ttf in sorted(ttfs.items()):
         weight = C.WEIGHTS[css_weight]
         cmap = TTFont(ttf).getBestCmap()
         for name, cps in subsets(cmap):
             fname = f'{variant.file_stem}-{weight.style}.{name}.woff2'
-            write_subset(ttf, cps, files / fname)
+            write_subset(ttf, cps, files / fname, layout)
             blocks.append(
                 '@font-face {\n'
                 f"  font-family: '{variant.family}';\n"

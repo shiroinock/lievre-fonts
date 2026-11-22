@@ -1,11 +1,14 @@
 Copyright © 2017 IBM Corp. with Reserved Font Name "Plex".
-Copyright © 2026 shiroinock (Lievre Term: the glyphs at U+E500–E509 and the changes below).
+Copyright © 2026 shiroinock (Lievre Term and Lievre Sans: the glyphs at U+E500–E509 and the changes below).
 
 Lievre Term is a Modified Version of IBM Plex Mono and IBM Plex Sans JP: the Latin glyphs are
 condensed to half the width of a Japanese glyph, taking their x and y coordinates from different
 weights of IBM Plex Mono Variable to keep the stems even, symbols of ambiguous East Asian Width are fitted
 into one cell, and glyphs for lievre are added in the private use area. It does not use the
 Reserved Font Name.
+
+Lievre Sans is a Modified Version of IBM Plex Sans JP: only the line metrics (ascent, descent and
+line gap) and the names are changed. It does not use the Reserved Font Name.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:

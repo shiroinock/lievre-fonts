@@ -1,7 +1,7 @@
 name: リリース
 
-# v0.1.0 のようなタグを打つと、各バリエーションの ttf / woff2・Web 用の CSS と分けた woff2・幅の表・ライセンスを
-# GitHub Releases に付ける。
+# v0.1.0 のようなタグを打つと、Lievre Term の各バリエーションと Lievre Sans の ttf / woff2・Web 用の CSS と分けた woff2・
+# 幅の表・ライセンス・npm のパッケージ @lievre/fonts の .tgz を GitHub Releases に付ける。
 on:
   push:
     tags: ['v*']
@@ -29,6 +29,7 @@ jobs:
       - uses: cachix/install-nix-action@bb0495a1086c46893eee56f32fd192dfe4a15bb9 # v32.0.0
       - run: nix flake check -L
       - run: nix build -L
+      - run: nix build -L .#npm -o result-npm
       - name: 配る物をまとめる
         env:
           TAG: ${{ github.ref_name }}
@@ -42,19 +43,25 @@ jobs:
           # Web 用はすべてのバリエーションを1つにまとめる。
           (cd "$root" && zip -qr "$OLDPWD/dist/lievre-term-web-$TAG.zip" web LICENSES)
           # バリエーションごとの zip（3つの太さの ttf と woff2、Web 用、ライセンス）。
-          for stem in $(ls "$root"/ttf | sed 's/-[A-Za-z]*\.ttf$//' | sort -u); do
+          for stem in $(for f in "$root"/ttf/*.ttf; do b=${f##*/}; echo "${b%-*}"; done | sort -u); do
             work=$(mktemp -d)
             mkdir "$work/$stem-$TAG"
             cp -L "$root"/ttf/"$stem"-*.ttf "$root"/woff2/"$stem"-*.woff2 "$work/$stem-$TAG/"
             cp -rL "$root/LICENSES" "$work/$stem-$TAG/"
             # Web 用の CSS と分けた woff2（CSS は files/ を相対の URL で読む）。
-            # LievreTermJP1NF → lievre-term-jp1-nf
-            id=lievre-term$(echo "${stem#LievreTerm}" | sed -e 's/NF$/-nf/' -e 's/^JP1/-jp1/' -e 's/^JP/-jp/' | tr 'A-Z' 'a-z')
+            # LievreTermJP1NF → lievre-term-jp1-nf、LievreSans → lievre-sans
+            if [ "$stem" = LievreSans ]; then
+              id=lievre-sans
+            else
+              id=lievre-term$(echo "${stem#LievreTerm}" | sed -e 's/NF$/-nf/' -e 's/^JP1/-jp1/' -e 's/^JP/-jp/' | tr '[:upper:]' '[:lower:]')
+            fi
             mkdir -p "$work/$stem-$TAG/web/files"
             cp -L "$root/web/$id.css" "$work/$stem-$TAG/web/"
             cp -L "$root"/web/files/"$stem"-*.woff2 "$work/$stem-$TAG/web/files/"
             (cd "$work" && zip -qr "$OLDPWD/dist/$stem-$TAG.zip" "$stem-$TAG")
           done
+          # npm のパッケージ @lievre/fonts（npm install に URL で渡せる）。
+          cp -L result-npm/lievre-fonts-*.tgz dist/
           ls -l dist
       - name: Releases に載せる
         env:

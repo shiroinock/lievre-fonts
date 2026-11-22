@@ -27,7 +27,7 @@ from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.ttLib import TTFont, newTable
 from fontTools.ttLib.woff2 import compress
 
-from . import condense, jis, web
+from . import condense, jis, sans, web
 from . import config as C
 from . import glyphs as G
 from . import widths as W
@@ -292,6 +292,30 @@ def cmd_fonts(args):
             print(f'{css_path.name}: Web 用に分けた woff2 と @font-face', flush=True)
 
 
+def cmd_sans(args):
+    out = args.out
+    (out / 'ttf').mkdir(parents=True, exist_ok=True)
+    if not args.no_woff2:
+        (out / 'woff2').mkdir(parents=True, exist_ok=True)
+    ttfs = {}
+    for css in args.weight or list(C.WEIGHTS):
+        weight = C.WEIGHTS[css]
+        font = sans.build_sans(args.sources, weight, source_epoch())
+        stem = f'{C.SANS.file_stem}-{weight.style}'
+        ttf = out / 'ttf' / f'{stem}.ttf'
+        font.save(ttf)
+        ttfs[css] = ttf
+        line = f'{ttf.name}: {len(font.getBestCmap())} 字, {ttf.stat().st_size} バイト'
+        if not args.no_woff2:
+            woff2 = out / 'woff2' / f'{stem}.woff2'
+            compress(str(ttf), str(woff2))
+            line += f', woff2 {woff2.stat().st_size} バイト'
+        print(line, flush=True)
+    if not args.no_woff2:
+        css_path = web.write_web(C.SANS, ttfs, out / 'web', generic='sans-serif', layout=True)
+        print(f'{css_path.name}: Web 用に分けた woff2 と @font-face', flush=True)
+
+
 def cmd_widths(args):
     args.out.parent.mkdir(parents=True, exist_ok=True)
     W.write(args.ucd, args.out)
@@ -299,7 +323,7 @@ def cmd_widths(args):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(prog='lievre-term-build', description='Lievre Term を組み立てる')
+    parser = argparse.ArgumentParser(prog='lievre-term-build', description='Lievre Term と Lievre Sans を組み立てる')
     sub = parser.add_subparsers(dest='cmd', required=True)
     p = sub.add_parser('fonts', help='フォントを書き出す')
     p.add_argument('--sources', type=Path, required=True, help='元のフォント（mono/・jp/・nf/）')
@@ -309,6 +333,12 @@ def main(argv=None):
     p.add_argument('--weight', action='append', type=int, choices=list(C.WEIGHTS))
     p.add_argument('--no-woff2', action='store_true', help='woff2 と Web 用の CSS を書かない')
     p.set_defaults(func=cmd_fonts)
+    p = sub.add_parser('sans', help='Lievre Sans（本文の書体）を書き出す')
+    p.add_argument('--sources', type=Path, required=True, help='元のフォント（jp/）')
+    p.add_argument('--out', type=Path, required=True)
+    p.add_argument('--weight', action='append', type=int, choices=list(C.WEIGHTS))
+    p.add_argument('--no-woff2', action='store_true', help='woff2 と Web 用の CSS を書かない')
+    p.set_defaults(func=cmd_sans)
     p = sub.add_parser('widths', help='幅の表を JSON で書き出す')
     p.add_argument('--ucd', type=Path, required=True)
     p.add_argument('--out', type=Path, required=True)
