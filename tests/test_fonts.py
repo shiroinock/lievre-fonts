@@ -26,9 +26,26 @@ if not (OUT / 'ttf').is_dir():
     pytest.skip(f'{OUT}/ttf がありません（先に nix build する）', allow_module_level=True)
 
 
+def ttf_path(variant: C.Variant, weight: C.Weight) -> Path:
+    return OUT / 'ttf' / f'{variant.file_stem}-{weight.style}.ttf'
+
+
 @cache
 def font(variant: C.Variant, weight: C.Weight) -> TTFont:
-    return TTFont(OUT / 'ttf' / f'{variant.file_stem}-{weight.style}.ttf')
+    # 手元で一部だけ組んだときは、組んでいないものを飛ばす（全部そろっているかは test_everything_is_built）。
+    path = ttf_path(variant, weight)
+    if not path.exists():
+        pytest.skip(f'{path.name} を組んでいない')
+    return TTFont(path)
+
+
+@pytest.mark.skipif(
+    not os.environ.get('LIEVRE_TERM_ALL'), reason='LIEVRE_TERM_ALL がない（nix flake check で確かめる）'
+)
+def test_everything_is_built():
+    missing = [ttf_path(v, w).name for v, w in CASES if not ttf_path(v, w).exists()]
+    missing += [f'{v.id}.css' for v in C.VARIANTS.values() if not (OUT / 'web' / f'{v.id}.css').exists()]
+    assert not missing, missing
 
 
 @cache
@@ -199,10 +216,15 @@ def font_faces(css: str):
 
 @pytest.mark.parametrize('variant', list(C.VARIANTS.values()), ids=list(C.VARIANTS))
 def test_web_css_covers_the_font(variant):
-    css = (OUT / 'web' / f'{variant.id}.css').read_text()
+    path = OUT / 'web' / f'{variant.id}.css'
+    if not path.exists():
+        pytest.skip(f'{path.name} を組んでいない')
+    css = path.read_text()
     faces = font_faces(css)
     assert {f['font-family'] for f in faces} == {f"'{variant.family}'"}
     for weight in C.WEIGHTS.values():
+        if not ttf_path(variant, weight).exists():
+            continue  # 組んでいない太さ
         mine = [f for f in faces if f['font-weight'] == str(weight.css)]
         assert mine, f'{weight.css} の @font-face がない'
         ttf = font(variant, weight)

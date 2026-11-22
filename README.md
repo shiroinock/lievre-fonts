@@ -5,7 +5,7 @@
 PlemolJP も同じ2つから作った 1:2 のフォントですが、Lievre Term には次の違いがあります。
 
 1. **lievre 専用の字形**：カードの角と辺、ボタンの両端、フォーカスの括弧を私用領域 U+E500–E509 に入れています。どれもセルの端までつながるので、`@lievre/tui` の枠が途切れずに描けます。
-2. **縦の位置**：Plex Sans JP の漢字は、Plex Sans JP の行の中央より 0.07em 上に寄っています。Lievre Term では行の箱（ascent・descent）のほうを動かして表意文字の字面の枠を行の中央に置き、英数字の字形も行の中央まで上げています。Web の 'Lievre Sans'（Plex Sans JP を `ascent-override` で直したもの）と同じ値です。
+2. **縦の位置**：Plex Sans JP の漢字は、Plex Sans JP の行の中央より 0.07em 上に寄っています。Lievre Term では行の箱（ascent・descent）のほうを動かして、表意文字の字面の枠を行の中央に置いています。英数字の字形も動かさず、英大文字の高さを本文と同じ 0.733em にしてベースラインを本文と共有します。Web の 'Lievre Sans'（Plex Sans JP を `ascent-override` で直したもの）と同じ値です。
 3. **英数字の大きさと線**：Plex Mono を横だけ半角の幅に縮め、英大文字の高さは本文の Plex Sans JP と同じ 0.733em に保ちます。横だけ縮めると細くなる縦の線は、太さの違う Plex Mono から座標を取って補い、線の太さを本文の 93% にそろえます（下の「英数字の作り方」）。
 4. **幅のあいまいな記号**：`○`・`×`・`−`・`↑`・`↓`・罫線などの幅を、`@lievre/tui` が使う string-width と同じ表で決めています。表は `lievre-term-widths.json` として一緒に配ります。
 
@@ -179,14 +179,14 @@ font-family = "Lievre Term JP1 NF"
 
 ```sh
 nix develop
-lievre-term-build fonts --sources "$LIEVRE_TERM_SOURCES" --ucd "$LIEVRE_TERM_UCD" --out out --variant lievre-term-jp1 --weight 400
-lievre-term-build widths --ucd "$LIEVRE_TERM_UCD" --out out/widths.json
+python -m lievre_term.build fonts --sources "$LIEVRE_TERM_SOURCES" --ucd "$LIEVRE_TERM_UCD" --out out --variant lievre-term-jp1 --weight 400
+python -m lievre_term.build widths --ucd "$LIEVRE_TERM_UCD" --out out/widths.json
 LIEVRE_TERM_FONTS=out pytest
 ```
 
-`nix develop` の中では `lievre-term-build` の代わりに `python -m lievre_term.build` でも動きます。元にする Plex・Nerd Fonts・Unicode のデータは [nix/sources.nix](nix/sources.nix) で版とハッシュを固定していて、ビルドの中ではネットワークに出ません。
+`nix develop` では `PYTHONPATH` が `src` を指すので、`python -m lievre_term.build` が手元の `src/` をそのまま動かします（`nix build .#tool` で組んだ `lievre-term-build` も同じ命令を持ちます）。`--variant` と `--weight` を外すと全部を組みます。テストは、`out/` にあるフォントだけを確かめ、組んでいないものは飛ばします。元にする Plex・Nerd Fonts・Unicode のデータは [nix/sources.nix](nix/sources.nix) で版とハッシュを固定していて、ビルドの中ではネットワークに出ません。
 
-確かめるのは次の2つです。`nix flake check` は全バリエーションを作ってからテストを流します。
+確かめるのは次の2つです。`nix flake check` は全バリエーションを作ってからテストを流し、すべてのフォントと Web 用の CSS がそろっていることも確かめます。
 
 ```sh
 nix flake check
