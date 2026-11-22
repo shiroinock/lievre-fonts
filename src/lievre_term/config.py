@@ -32,6 +32,11 @@ CELL_CENTER = 380
 ASCENT = 980
 DESCENT = -220
 
+# Lievre Sans（本文の書体）の行の箱。Plex Sans JP そのまま（1060 / -440、中心 310）の高さ 1.5em は保ち、
+# 中心を Lievre Term と同じ 380 にする（Web の ascent-override: 113%・descent-override: 37% と同じ）。
+SANS_ASCENT = 1130
+SANS_DESCENT = -370
+
 # 日本語の字形を縦に動かす量。0 のままにしておくと、Plex Sans JP と同じ行に並べたとき
 # （Web で本文の中の等幅など）、ベースラインでそろえても漢字の高さがずれない。
 JP_SHIFT = 0
@@ -96,6 +101,9 @@ VARIANTS = {
         Variant('lievre-term-jp-nf', 'Lievre Term JP NF', 'jp', True),
     ]
 }
+
+# 本文の書体。Plex Sans JP の字形とカーニングはそのままで、行の箱と名前だけを変える（sans.py）。
+SANS = Variant('lievre-sans', 'Lievre Sans', 'jp', False)
 
 VERSION = '0.1.0'
 SOURCES = 'IBM Plex Mono 2.5.0, IBM Plex Mono Variable 1.0.0, IBM Plex Sans JP 3.0.0, Nerd Fonts 3.5.1'

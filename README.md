@@ -1,11 +1,18 @@
-# Lievre Term
+# lievre-fonts
 
-[lievre](https://github.com/shiroinock/lievre) の等幅フォントです。端末と、Web の等幅（ログ・コマンドの出力・差分・コード・桁をそろえる表など、日本語も含めて丸ごと等幅で組む場面）の両方で使います。IBM Plex Mono の英数字と IBM Plex Sans JP の日本語を、ちょうど 1:2 の幅に組み合わせています。
+[lievre](https://github.com/shiroinock/lievre) の書体です。2つあります。
+
+- **Lievre Term**：等幅。端末と、Web の等幅（ログ・コマンドの出力・差分・コード・桁をそろえる表など、日本語も含めて丸ごと等幅で組む場面）の両方で使います。IBM Plex Mono の英数字と IBM Plex Sans JP の日本語を、ちょうど 1:2 の幅に組み合わせています。
+- **Lievre Sans**：本文の書体。IBM Plex Sans JP の行の箱を直し、漢字が行の中央に来るようにしたものです（下の「Lievre Sans」）。
+
+どちらも行の中央がベースラインの 0.38em 上にそろっているので、同じ行に混ぜても字の高さがずれません。Web では npm のパッケージ `@lievre/fonts` として読み込めます。
+
+## Lievre Term
 
 PlemolJP も同じ2つから作った 1:2 のフォントですが、Lievre Term には次の違いがあります。
 
 1. **lievre 専用の字形**：カードの角と辺、ボタンの両端、フォーカスの括弧を私用領域 U+E500–E509 に入れています。どれもセルの端までつながるので、`@lievre/tui` の枠が途切れずに描けます。
-2. **縦の位置**：Plex Sans JP の漢字は、Plex Sans JP の行の中央より 0.07em 上に寄っています。Lievre Term では行の箱（ascent・descent）のほうを動かして、表意文字の字面の枠を行の中央に置いています。英数字の字形も動かさず、英大文字の高さを本文と同じ 0.733em にしてベースラインを本文と共有します。Web の 'Lievre Sans'（Plex Sans JP を `ascent-override` で直したもの）と同じ値です。
+2. **縦の位置**：Plex Sans JP の漢字は、Plex Sans JP の行の中央より 0.07em 上に寄っています。Lievre Term では行の箱（ascent・descent）のほうを動かして、表意文字の字面の枠を行の中央に置いています。英数字の字形も動かさず、英大文字の高さを本文と同じ 0.733em にしてベースラインを本文と共有します。Lievre Sans と同じ値です。
 3. **英数字の大きさと線**：Plex Mono を横だけ半角の幅に縮め、英大文字の高さは本文の Plex Sans JP と同じ 0.733em に保ちます。横だけ縮めると細くなる縦の線は、太さの違う Plex Mono から座標を取って補い、線の太さを本文の 93% にそろえます（下の「英数字の作り方」）。
 4. **幅のあいまいな記号**：`○`・`×`・`−`・`↑`・`↓`・罫線などの幅を、`@lievre/tui` が使う string-width と同じ表で決めています。表は `lievre-term-widths.json` として一緒に配ります。
 
@@ -120,7 +127,48 @@ Plex Mono（字幅 0.6em、英大文字の高さ 0.698em）を、字幅 0.5em・
 
 string-width 8.3.0 と全符号位置で比べると、East Asian Width による幅はすべて一致します。違うのは、Unicode 17・18 で足された結合文字 70 字だけです（Node 24 の正規表現のデータがまだその版でないため、string-width は 1 を返します）。このフォントにその字は入っていません。
 
+## Lievre Sans
+
+本文の書体です。IBM Plex Sans JP 3.0.0 の 400・500・600 から、行の箱と名前だけを変えて作ります（[src/lievre_term/sans.py](src/lievre_term/sans.py)）。字形・送り幅・カーニング・OpenType の機能（GSUB・GPOS・BASE・縦組みの寸法）は Plex Sans JP のままです。
+
+- 行の箱は ascent 1.13em・descent 0.37em・line gap 0 です。高さ 1.5em は Plex Sans JP そのまま（1.06em / 0.44em）と同じで、中央をベースラインの 0.31em 上から 0.38em 上に移しています。Web で Plex Sans JP に `ascent-override: 113%; descent-override: 37%; line-gap-override: 0%` を付けるのと同じ値で、Lievre Term の行の中央とも一致します。
+- 書体名は Lievre Sans です。Plex は OFL の予約された名前なので使いません。
+- 端末用ではないので、幅の表には合わせていません（英数字はプロポーショナルです）。
+
+Chromium の canvas で測った値（10000px）は次のとおりです。正なら中央より下です。
+
+| 太さ | 行の中央 | 行の箱 | 永 | 字 | あ | H・0 |
+|---|--:|--:|--:|--:|--:|--:|
+| 400 | 0.380em | 1.500em | −0.006em | −0.008em | −0.009em | +0.013em |
+| 500 | 0.380em | 1.500em | −0.007em | −0.007em | −0.005em | +0.013em |
+| 600 | 0.380em | 1.500em | −0.009em | −0.006em | −0.003em | +0.013em |
+
+Web 用には、Lievre Term と同じく `unicode-range` で分けた woff2 と `@font-face` の CSS（`web/lievre-sans.css`）を出します。分けたファイルにもカーニングなどの機能を残します（分けたファイルをまたぐ字の組のカーニングは効きません）。
+
 ## 使う
+
+### npm（@lievre/fonts）
+
+Web では、Lievre Sans・Lievre Term・Lievre Term JP の CSS と分けた woff2、幅の表、ライセンスを1つにまとめた `@lievre/fonts` を使います。`nix build .#npm` で作り、Releases に `lievre-fonts-<版>.tgz` として載せます。npm にはまだ公開していないので、Releases の URL を依存に書きます。
+
+```sh
+npm install https://github.com/shiroinock/lievre-fonts/releases/download/v0.1.0/lievre-fonts-0.1.0.tgz
+```
+
+```css
+@import '@lievre/fonts';             /* Lievre Sans と Lievre Term JP */
+@import '@lievre/fonts/sans.css';    /* Lievre Sans だけ */
+@import '@lievre/fonts/term.css';    /* Lievre Term（英数字だけ） */
+@import '@lievre/fonts/term-jp.css'; /* Lievre Term JP */
+```
+
+```css
+body { font-family: 'Lievre Sans', sans-serif; }
+pre, code { font-family: 'Lievre Term JP', monospace; }
+```
+
+幅の表は `@lievre/fonts/widths.json` で読めます。Nerd Fonts 入りのバリエーションは Web ではほとんど使わず大きいので、このパッケージには入れていません（Releases の zip にはあります）。
+
 
 ### Nix
 
@@ -181,6 +229,7 @@ font-family = "Lievre Term JP1 NF"
 nix develop
 python -m lievre_term.build fonts --sources "$LIEVRE_TERM_SOURCES" --ucd "$LIEVRE_TERM_UCD" --out out --variant lievre-term-jp1 --weight 400
 python -m lievre_term.build widths --ucd "$LIEVRE_TERM_UCD" --out out/widths.json
+python -m lievre_term.build sans --sources "$LIEVRE_TERM_SOURCES" --out out
 LIEVRE_TERM_FONTS=out pytest
 ```
 

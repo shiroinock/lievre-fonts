@@ -44,7 +44,9 @@ def font(variant: C.Variant, weight: C.Weight) -> TTFont:
 )
 def test_everything_is_built():
     missing = [ttf_path(v, w).name for v, w in CASES if not ttf_path(v, w).exists()]
-    missing += [f'{v.id}.css' for v in C.VARIANTS.values() if not (OUT / 'web' / f'{v.id}.css').exists()]
+    missing += [ttf_path(C.SANS, w).name for w in C.WEIGHTS.values() if not ttf_path(C.SANS, w).exists()]
+    faces = [*C.VARIANTS.values(), C.SANS]
+    missing += [f'{v.id}.css' for v in faces if not (OUT / 'web' / f'{v.id}.css').exists()]
     assert not missing, missing
 
 
@@ -214,7 +216,7 @@ def font_faces(css: str):
     return faces
 
 
-@pytest.mark.parametrize('variant', list(C.VARIANTS.values()), ids=list(C.VARIANTS))
+@pytest.mark.parametrize('variant', [*C.VARIANTS.values(), C.SANS], ids=[*C.VARIANTS, C.SANS.id])
 def test_web_css_covers_the_font(variant):
     path = OUT / 'web' / f'{variant.id}.css'
     if not path.exists():
@@ -239,7 +241,7 @@ def test_web_css_covers_the_font(variant):
             part = TTFont(path)
             assert part.flavor == 'woff2'
             assert set(part.getBestCmap()) == ranges, f'{path.name} の字が unicode-range と違う'
-            assert (part['hhea'].ascent, part['hhea'].descent) == (C.ASCENT, C.DESCENT)
+            assert (part['hhea'].ascent, part['hhea'].descent) == (ttf['hhea'].ascent, ttf['hhea'].descent)
             for cp, g in part.getBestCmap().items():
                 assert part['hmtx'][g][0] == ttf['hmtx'][cmap[cp]][0]
         assert seen == set(cmap), 'unicode-range を合わせてもフォントの字にならない'
@@ -267,3 +269,41 @@ def test_latin_strokes_follow_the_body_text(variant, weight):
     sans_v, sans_h = C.SANS_STEMS[weight.css]
     assert abs(v - sans_v * C.STROKE_RATIO) <= 2, f'縦の線 {v}'
     assert abs(h - sans_h * C.STROKE_RATIO) <= 2, f'横の線 {h}'
+
+
+SANS_CASES = list(C.WEIGHTS.values())
+SANS_IDS = [f'{C.SANS.id}-{w.css}' for w in SANS_CASES]
+
+
+@pytest.mark.parametrize('weight', SANS_CASES, ids=SANS_IDS)
+def test_sans_line_box(weight):
+    # 行の箱は 1.5em のまま、中央をベースラインの 0.38em 上（Lievre Term と同じ）に。
+    f = font(C.SANS, weight)
+    assert (f['hhea'].ascent, f['hhea'].descent, f['hhea'].lineGap) == (C.SANS_ASCENT, C.SANS_DESCENT, 0)
+    os2 = f['OS/2']
+    assert (os2.sTypoAscender, os2.sTypoDescender, os2.sTypoLineGap) == (C.SANS_ASCENT, C.SANS_DESCENT, 0)
+    assert os2.fsSelection & (1 << 7), 'USE_TYPO_METRICS'
+    assert C.SANS_ASCENT - C.SANS_DESCENT == 1500
+    assert (C.SANS_ASCENT + C.SANS_DESCENT) / 2 == C.CELL_CENTER
+
+
+@pytest.mark.parametrize('weight', SANS_CASES, ids=SANS_IDS)
+def test_sans_keeps_plex_sans_jp(weight):
+    # 字形・送り幅・OpenType の機能は Plex Sans JP のまま（カーニングなどを失わない）。
+    f = font(C.SANS, weight)
+    assert {'GSUB', 'GPOS', 'BASE'} <= set(f.keys())
+    assert len(f.getBestCmap()) > 15000
+    assert advance(f, ord('あ')) == C.UPM
+    _, y0, _, y1 = bounds(f, ord('H'))
+    assert (y0, y1) == (0, C.LATIN_CAP)  # Lievre Term の英大文字と同じ高さ
+
+
+@pytest.mark.parametrize('weight', SANS_CASES, ids=SANS_IDS)
+def test_sans_names_avoid_reserved_font_names(weight):
+    f = font(C.SANS, weight)
+    # 書体名（ID 1・3・4・6・16・17）に予約された名前を使わない。版の説明（ID 5）の出どころの表示はよい。
+    for record in f['name'].names:
+        if record.nameID in (1, 3, 4, 6, 16, 17):
+            assert 'Plex' not in record.toUnicode(), record.toUnicode()
+    assert f['name'].getDebugName(16) == C.SANS.family
+    assert f['name'].getDebugName(17) == weight.style

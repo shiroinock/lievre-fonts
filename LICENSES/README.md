@@ -1,6 +1,6 @@
 # ライセンス
 
-Lievre Term は SIL Open Font License 1.1（[OFL.txt](OFL.txt)）で配ります。元は IBM Plex Mono と IBM Plex Sans JP（どちらも OFL 1.1、予約された書体名「Plex」）で、書体名に「Plex」は使っていません。
+Lievre Term と Lievre Sans は SIL Open Font License 1.1（[OFL.txt](OFL.txt)）で配ります。元は IBM Plex Mono と IBM Plex Sans JP（どちらも OFL 1.1、予約された書体名「Plex」）で、書体名に「Plex」は使っていません。
 
 ## Nerd Fonts の記号（名前に NF の付くバリエーション）
 
