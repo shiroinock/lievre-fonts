@@ -1,0 +1,21 @@
+# Fails a PR when a workflow uses an action by a tag or branch instead of a commit SHA.
+# Fix it with `pinact run` (nix run github:shiroinock/workflows#pinact -- run).
+# The job lives in shiroinock/workflows; change it there, not here.
+# Pinned to a commit that was read, not @main: the jobs get CLAUDE_CODE_OAUTH_TOKEN, so a change
+# there must not reach this public repository unseen. Renovate raises the SHA in all of these
+# workflows together (and workflows_ref in merge-reservation.yml and pinact.yml).
+name: アクションの固定
+
+on:
+  # Every PR, not only ones that touch .github: a required check has to report on all of them.
+  pull_request:
+
+permissions: {}
+
+jobs:
+  pinact:
+    uses: shiroinock/workflows/.github/workflows/pinact.yml@cf3f4ca70d5828616e52159b21d18f5311f0dcbe
+    permissions:
+      contents: read
+    with:
+      workflows_ref: cf3f4ca70d5828616e52159b21d18f5311f0dcbe

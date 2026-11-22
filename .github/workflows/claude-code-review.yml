@@ -1,0 +1,35 @@
+# Claude Code reviews every ready PR, and labels it マージ予約 when nothing needs fixing.
+# Make "review / verdict" a required check: it fails while Claude's findings remain.
+# The jobs live in shiroinock/workflows; change them there, not here.
+# Pinned to a commit that was read, not @main: the jobs get CLAUDE_CODE_OAUTH_TOKEN, so a change
+# there must not reach this public repository unseen. Renovate raises the SHA in all of these
+# workflows together (and workflows_ref in merge-reservation.yml and pinact.yml).
+name: Claude のレビュー
+
+on:
+  # pull_request (not pull_request_target): a fork's PR gets no secrets, and is skipped too.
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions: {}
+
+jobs:
+  review:
+    uses: shiroinock/workflows/.github/workflows/claude-review.yml@cf3f4ca70d5828616e52159b21d18f5311f0dcbe
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write # the nits job collects minor findings in an issue
+      actions: write
+      id-token: write
+    with:
+      review_focus: |
+        - 幅：英数字は日本語のちょうど半分（500 と 1000）。どの字の送り幅も、幅の表（widths.json、string-width 8 の決まり）のセルの数 × 500 か。幅のあいまいな字は 1 セル。
+        - 縦の位置：行の中央はベースラインの 0.38em 上（ascent 0.98em・descent 0.22em）で、Web の 'Lievre Sans' と同じか。英大文字の高さは本文の Plex Sans JP と同じ 0.733em で、字形を縦に動かしていないか。
+        - 英数字の線：横だけ縮めて線を補う作り（condense.py）で、縦・横の線が本文の STROKE_RATIO 倍になっているか。
+        - lievre の字形（U+E500–E509）と罫線・ブロック・網がセルの端に届き、隣のセルとつながるか。lievre の私用領域 U+E500–E53F が Nerd Fonts と重ならないか。
+        - ライセンス：OFL の予約された名前（Plex、Pomicons、Font Awesome）を書体名に使っていないか。足した記号の集合のライセンス本文を LICENSES/ に同梱しているか。
+        - ビルドの再現性：元のフォントと Unicode のデータは nix/sources.nix で版とハッシュを固定し、ビルド中にネットワークへ出ないか。時刻を SOURCE_DATE_EPOCH から取っているか。
+        - 文書・コメント・コミットが日本語で、英大文字の飾りラベルを使っていないか。
+    secrets:
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
