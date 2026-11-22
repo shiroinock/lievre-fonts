@@ -1,0 +1,64 @@
+name: リリース
+
+# v0.1.0 のようなタグを打つと、各バリエーションの ttf / woff2・Web 用の CSS と分けた woff2・幅の表・ライセンスを
+# GitHub Releases に付ける。
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    name: リリース
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: タグとフォントの版がそろっているか
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          grep -q "^VERSION = '${TAG#v}'$" src/lievre_term/config.py \
+            || { echo "src/lievre_term/config.py の VERSION を ${TAG#v} にしてからタグを打つ"; exit 1; }
+      - uses: cachix/install-nix-action@bb0495a1086c46893eee56f32fd192dfe4a15bb9 # v32.0.0
+      - run: nix flake check -L
+      - run: nix build -L
+      - name: 配る物をまとめる
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          root=result/share/lievre-term
+          mkdir -p dist
+          cp -L "$root"/ttf/*.ttf "$root"/woff2/*.woff2 dist/
+          cp -L "$root/widths.json" dist/lievre-term-widths.json
+          (cd "$root" && zip -qr "$OLDPWD/dist/LICENSES.zip" LICENSES)
+          # Web 用はすべてのバリエーションを1つにまとめる。
+          (cd "$root" && zip -qr "$OLDPWD/dist/lievre-term-web-$TAG.zip" web LICENSES)
+          # バリエーションごとの zip（3つの太さの ttf と woff2、Web 用、ライセンス）。
+          for stem in $(ls "$root"/ttf | sed 's/-[A-Za-z]*\.ttf$//' | sort -u); do
+            work=$(mktemp -d)
+            mkdir "$work/$stem-$TAG"
+            cp -L "$root"/ttf/"$stem"-*.ttf "$root"/woff2/"$stem"-*.woff2 "$work/$stem-$TAG/"
+            cp -rL "$root/LICENSES" "$work/$stem-$TAG/"
+            # Web 用の CSS と分けた woff2（CSS は files/ を相対の URL で読む）。
+            # LievreTermJP1NF → lievre-term-jp1-nf
+            id=lievre-term$(echo "${stem#LievreTerm}" | sed -e 's/NF$/-nf/' -e 's/^JP1/-jp1/' -e 's/^JP/-jp/' | tr 'A-Z' 'a-z')
+            mkdir -p "$work/$stem-$TAG/web/files"
+            cp -L "$root/web/$id.css" "$work/$stem-$TAG/web/"
+            cp -L "$root"/web/files/"$stem"-*.woff2 "$work/$stem-$TAG/web/files/"
+            (cd "$work" && zip -qr "$OLDPWD/dist/$stem-$TAG.zip" "$stem-$TAG")
+          done
+          ls -l dist
+      - name: Releases に載せる
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          gh release create "$TAG" dist/* --repo "$GITHUB_REPOSITORY" --title "Lievre Term $TAG" --generate-notes

@@ -1,0 +1,29 @@
+[project]
+name = "lievre-term-build"
+version = "0.1.0"
+description = "Lievre Term（lievre の端末用フォント）を組み立てる道具"
+license = "OFL-1.1"
+requires-python = ">=3.13"
+dependencies = ["fonttools>=4.61", "brotli>=1.1"]
+
+[project.optional-dependencies]
+test = ["pytest>=9"]
+
+[project.scripts]
+lievre-term-build = "lievre_term.build:main"
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.format]
+quote-style = "single"
