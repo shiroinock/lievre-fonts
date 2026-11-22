@@ -221,6 +221,7 @@
                 nativeBuildInputs = [ python ];
                 LIEVRE_TERM_FONTS = "${all}/share/lievre-term";
                 LIEVRE_TERM_UCD = "${sources.ucd}";
+                LIEVRE_TERM_ALL = "1"; # 全部そろっているかも確かめる
               }
               ''
                 cp -r ${src}/. work && chmod -R u+w work && cd work

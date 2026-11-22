@@ -32,6 +32,6 @@ jobs:
             echo '|---|--:|--:|'
             for f in result/share/fonts/truetype/*.ttf; do
               stem=$(basename "$f" .ttf)
-              echo "| $stem | $(stat -Lc %s "$f") | $(stat -Lc %s "result/share/fonts/woff2/$stem.woff2") |"
+              echo "| $stem | $(stat -Lc %s "$f") | $(stat -Lc %s "result/share/lievre-term/woff2/$stem.woff2") |"
             done
           } >> "$GITHUB_STEP_SUMMARY"
