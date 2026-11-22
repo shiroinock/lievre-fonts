@@ -6,7 +6,7 @@
 字形は次の順に取る（先に取ったものが勝つ）。
 
   1. lievre 専用の字形（U+E500–E509）
-  2. IBM Plex Mono。5/6 に縮めて幅 500 にする。罫線とブロック（U+2500–259F）は縦もセルに合わせる
+  2. IBM Plex Mono。5/6 に縮めて幅 500 にし、LATIN_SHIFT だけ上げる。罫線とブロック（U+2500–259F）は縦もセルに合わせる
   3. IBM Plex Sans JP（JP1・JP のとき）。JP_SHIFT だけ縦に動かす（既定は 0）。幅の表で 1 の字は半角に収める
   4. Symbols Nerd Font Mono（NF のとき）。Powerline の区切りはセルいっぱいに引き伸ばす
 
@@ -68,17 +68,18 @@ def scale_about(s, cx_from, cy_from, cx_to, cy_to):
 def place_mono(src: Source, cp, name, w):
     adv = src.advance(name)
     s = C.LATIN_SCALE
+    dy = C.LATIN_SHIFT
     if adv == 0:
         # 結合文字など。幅の表でも 0 のときだけ残す（U+2028 などは表では 1 なので落とす）。
-        return ((s, 0, 0, s, 0, 0), 0) if w == 0 else None
+        return ((s, 0, 0, s, 0, dy), 0) if w == 0 else None
     if w == 0:
-        return (s, 0, 0, s, -adv * s, 0), 0
+        return (s, 0, 0, s, -adv * s, dy), 0
     target = w * C.CELL
     dx = (target - adv * s) / 2
     if 0x2500 <= cp <= 0x259F:
         sy = HEIGHT / (C.MONO_BOX_TOP - C.MONO_BOX_BOTTOM)
         return (s, 0, 0, sy, dx, C.DESCENT - C.MONO_BOX_BOTTOM * sy), target
-    return (s, 0, 0, s, dx, 0), target
+    return (s, 0, 0, s, dx, dy), target
 
 
 def place_jp(src: Source, cp, name, w):

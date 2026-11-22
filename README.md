@@ -5,7 +5,7 @@
 PlemolJP も同じ2つから作った 1:2 のフォントですが、Lievre Term には次の違いがあります。
 
 1. **lievre 専用の字形**：カードの角と辺、ボタンの両端、フォーカスの括弧を私用領域 U+E500–E509 に入れています。どれもセルの端までつながるので、`@lievre/tui` の枠が途切れずに描けます。
-2. **漢字の縦の位置**：Plex Sans JP の漢字は、Plex Sans JP の行の中央より 0.07em 上に寄っています。Lievre Term では行の箱（ascent・descent）のほうを動かして、表意文字の字面の枠を行の中央に置いています。Web の 'Lievre Sans'（Plex Sans JP を `ascent-override` で直したもの）と同じ値です。
+2. **縦の位置**：Plex Sans JP の漢字は、Plex Sans JP の行の中央より 0.07em 上に寄っています。Lievre Term では行の箱（ascent・descent）のほうを動かして表意文字の字面の枠を行の中央に置き、英数字の字形も行の中央まで上げています。Web の 'Lievre Sans'（Plex Sans JP を `ascent-override` で直したもの）と同じ値です。
 3. **英数字の縮め方**：Plex Mono を 5/6 に縮めます。Web の Lievre Mono（`size-adjust: 83.333%`）と同じなので、Web と端末で字の大きさがそろいます。
 4. **幅のあいまいな記号**：`○`・`×`・`−`・`↑`・`↓`・罫線などの幅を、`@lievre/tui` が使う string-width と同じ表で決めています。表は `lievre-term-widths.json` として一緒に配ります。
 
@@ -63,22 +63,25 @@ lievre の私用領域 U+E500–U+E53F は、Nerd Fonts 3.5.1 が使っていな
 
 - Plex Sans JP の表意文字の字面の枠は -0.12〜0.88em（BASE テーブルの ideo。字の墨の枠 icfb・icft も -0.075〜0.835em）で、中央はベースラインの 0.38em 上です。
 - Plex Sans JP そのままの行の箱（ascent 1.06em、descent 0.44em）の中央は 0.31em 上なので、漢字は 0.07em 上に寄ります。
-- Lievre Term は ascent 0.98em、descent 0.22em にして、行の箱の中央を 0.38em 上に置きます。字形は動かしません（`JP_SHIFT = 0`）。
+- Lievre Term は ascent 0.98em、descent 0.22em にして、行の箱の中央を 0.38em 上に置きます。日本語の字形は動かしません（`JP_SHIFT = 0`）。
+- 英数字（Plex Mono を 5/6 に縮めた字）は、英大文字の高さ 0.582em の中央 0.291em が行の中央 0.38em に来るように、字形を 0.089em 上げます（`LATIN_SHIFT = 89`）。罫線・ブロック・lievre の字形はセルに合わせて描くので動かしません。
 - Web の 'Lievre Sans' は `ascent-override: 113%; descent-override: 37%; line-gap-override: 0%` で、同じく中央が 0.38em 上に来ます（(1.13 − 0.37) / 2 = 0.38）。
 
-字形を動かさないのは、Web で本文（Lievre Sans）の中に等幅（Lievre Term）を並べたとき、ブラウザがベースラインで字をそろえるからです。字形を動かすと、等幅の漢字だけが周りより沈みます。行の箱で直すと、ベースラインも漢字の高さも本文とそろいます。
+日本語の字形を動かさないのは、Web で本文（Lievre Sans）の中に等幅（Lievre Term）を並べたとき、ブラウザがベースラインで字をそろえるからです。行の箱のほうで直すので、等幅の漢字は本文の漢字と同じ高さに並びます。
+
+英数字だけは、本文と中央をそろえるかベースラインをそろえるかのどちらかしか選べません。等幅の英大文字（0.582em）は本文の英大文字より背が低いので、中央をそろえるとベースラインがずれます。Lievre Term は中央をそろえるほうを取りました。端末のセルの中でも、等幅の段落でも、本文の中に並べても、英数字・かな・漢字の見た目の中央が行の中央に来ます。代わりに、本文の中に並べた等幅の英数字のベースラインは、本文より 0.089em（16px で約 1.4px）上になります。
 
 測り方は Web 側と同じで、Chromium の canvas に 10000px で描き、`measureText` から上寄りを (A − D − 墨の上 − (−墨の下)) / 2 で出しました（A・D は fontBoundingBox、墨は actualBoundingBox。正なら中央より下）。400 の値は次のとおりです。
 
 | 字 | Plex Sans JP そのまま | Lievre Sans | Lievre Term |
 |---|--:|--:|--:|
-| 漢字（永・国） | −0.074〜−0.078em | −0.004〜−0.008em | −0.006〜+0.019em |
-| かな（あ） | −0.072〜−0.074em | 約 −0.003em | −0.009em |
-| 英大文字・数字（H・0） | −0.061em | +0.009em | +0.089em |
+| 漢字（永・国） | −0.074〜−0.078em | −0.006〜+0.019em | −0.006〜+0.021em |
+| かな（あ） | −0.072〜−0.074em | −0.009em | −0.009em |
+| 英大文字・数字（H・0） | −0.061em | +0.013em | 0.000em |
 
-Lievre Term の英数字は Plex Mono を 5/6 に縮めた字なので、Plex Sans JP の英数字より背が低く、ベースラインを共有すると中央より 0.089em 下に来ます。端末でも英字だけの行は少し下寄りに見えますが、日本語とベースラインがそろうほうを取りました。
+Lievre Sans の列は、Plex Sans JP に `ascent-override: 113%; descent-override: 37%` を付けて同じページで測った値です。
 
-テストは、行の箱の中央が字面の枠の中央（0.38em）にあることと、代表的な漢字の墨の中央がそこから 0.012em 以内にあることを確かめます。数は [src/lievre_term/config.py](src/lievre_term/config.py) の `CELL_CENTER`・`ASCENT`・`DESCENT`・`JP_SHIFT` です。
+テストは、行の箱の中央が字面の枠の中央（0.38em）にあること、代表的な漢字の墨の中央がそこから 0.012em 以内、英大文字と数字の墨の中央が 0.006em 以内にあることを確かめます。数は [src/lievre_term/config.py](src/lievre_term/config.py) の `CELL_CENTER`・`ASCENT`・`DESCENT`・`JP_SHIFT`・`LATIN_SHIFT` です。
 
 ## 幅の表
 

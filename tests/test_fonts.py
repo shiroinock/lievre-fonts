@@ -219,3 +219,12 @@ def test_web_css_covers_the_font(variant):
 def test_line_center_is_the_ideographic_center():
     # 表意文字の字面の枠（Plex Sans JP の BASE、-120〜880）の中央を、行の箱の中央に置く。Web の 'Lievre Sans' と同じ。
     assert (C.ASCENT + C.DESCENT) / 2 == C.CELL_CENTER == (-120 + 880) / 2
+
+
+@pytest.mark.parametrize(('variant', 'weight'), CASES, ids=IDS)
+def test_latin_sits_on_the_cell_center(variant, weight):
+    # 英大文字と数字の見た目の中央も行の中央に置く（LATIN_SHIFT）。
+    f = font(variant, weight)
+    for ch in 'HE0':
+        _, y0, _, y1 = bounds(f, ord(ch))
+        assert abs((y0 + y1) / 2 - C.CELL_CENTER) <= 6, f'{ch} の中心 {(y0 + y1) / 2}'
