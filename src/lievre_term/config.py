@@ -6,8 +6,20 @@ from dataclasses import dataclass
 UPM = 1000
 CELL = 500
 
-# Plex Mono（字幅 600）を 5/6 に縮めて 500 にする。Web の Lievre Mono の size-adjust: 83.333% と同じ。
+# 英数字は Plex Mono（字幅 600、英大文字の高さ 698）を、横は字幅 500 に、縦は英大文字の高さが
+# Plex Sans JP と同じ 733 になるように縮める（横 5/6、縦 733/698）。縦と横で倍率が違うので、
+# 線の太さは condense.py で補う。
+LATIN_SX = CELL / 600
+LATIN_CAP = 733
+LATIN_SY = LATIN_CAP / 698
+# 罫線とブロック、.notdef は、縦横同じ 5/6 で縮める。
 LATIN_SCALE = 5 / 6
+
+# Plex Sans JP 3.0.0 の 'H' の縦の線と横の線の太さ（400 / 500 / 600）。
+SANS_STEMS = {400: (84, 74), 500: (113, 100), 600: (132, 116)}
+# 英数字の線は、本文（Plex Sans JP）の線のこの割合にする。等幅は字の中の空きが小さく、
+# 同じ太さでも黒く見えるので、少し細くして本文と同じ濃さに見せる（見比べて決めた値）。
+STROKE_RATIO = 0.93
 
 # 縦の位置の決まり：表意文字の字面の枠を、行（セル）の箱の中央に置く。
 # Plex Sans JP の表意文字の枠は -120〜880（BASE の ideo、字面は icfb / icft の -75〜835）で、
@@ -24,11 +36,8 @@ DESCENT = -220
 # （Web で本文の中の等幅など）、ベースラインでそろえても漢字の高さがずれない。
 JP_SHIFT = 0
 
-# 英数字（Plex Mono）の字形を縦に動かす量。5/6 に縮めた英大文字の高さ 698 × 5/6 = 582 の中央 291 を、
-# 行の中央 380 に上げる。これで英数字・かな・漢字の見た目の中央がすべて行の中央にそろう。
-# 英大文字が本文（Plex Sans JP）より背が低いので、Web で本文の中に並べると、中央はそろう代わりに
-# 英数字のベースラインが本文より 0.089em 上になる。罫線・ブロック・lievre の字形はセルに合わせるので動かさない。
-LATIN_SHIFT = 89
+# 英数字の字形は縦に動かさない。英大文字の高さが Plex Sans JP と同じなので、ベースラインを
+# 本文と共有したまま、英大文字の中央が本文と同じ位置（行の中央の 0.013em 下）に来る。
 
 # lievre の字形の線の太さ。試作（字幅 600 で 50）を 5/6 にしたもの。Plex Mono の罫線と同じく、
 # 字の太さが変わっても線の太さは変えない（─ と並べて使うので、太さがずれると継ぎ目が目立つ）。
@@ -89,4 +98,4 @@ VARIANTS = {
 }
 
 VERSION = '0.1.0'
-SOURCES = 'IBM Plex Mono 2.5.0, IBM Plex Sans JP 3.0.0, Nerd Fonts 3.5.1'
+SOURCES = 'IBM Plex Mono 2.5.0, IBM Plex Mono Variable 1.0.0, IBM Plex Sans JP 3.0.0, Nerd Fonts 3.5.1'

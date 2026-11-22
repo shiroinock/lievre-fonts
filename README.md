@@ -6,18 +6,18 @@ PlemolJP も同じ2つから作った 1:2 のフォントですが、Lievre Term
 
 1. **lievre 専用の字形**：カードの角と辺、ボタンの両端、フォーカスの括弧を私用領域 U+E500–E509 に入れています。どれもセルの端までつながるので、`@lievre/tui` の枠が途切れずに描けます。
 2. **縦の位置**：Plex Sans JP の漢字は、Plex Sans JP の行の中央より 0.07em 上に寄っています。Lievre Term では行の箱（ascent・descent）のほうを動かして表意文字の字面の枠を行の中央に置き、英数字の字形も行の中央まで上げています。Web の 'Lievre Sans'（Plex Sans JP を `ascent-override` で直したもの）と同じ値です。
-3. **英数字の縮め方**：Plex Mono を 5/6 に縮めます。Web の Lievre Mono（`size-adjust: 83.333%`）と同じなので、Web と端末で字の大きさがそろいます。
+3. **英数字の大きさと線**：Plex Mono を横だけ半角の幅に縮め、英大文字の高さは本文の Plex Sans JP と同じ 0.733em に保ちます。横だけ縮めると細くなる縦の線は、太さの違う Plex Mono から座標を取って補い、線の太さを本文の 93% にそろえます（下の「英数字の作り方」）。
 4. **幅のあいまいな記号**：`○`・`×`・`−`・`↑`・`↓`・罫線などの幅を、`@lievre/tui` が使う string-width と同じ表で決めています。表は `lievre-term-widths.json` として一緒に配ります。
 
 ## バリエーション
 
-英字（Plex Mono を 5/6 に縮め、lievre の字形を足したもの）を土台に、日本語の範囲と Nerd Fonts の記号を組み合わせた6つがあります。どれも 400（Regular）・500（Medium）・600（SemiBold）の3つの太さがあります。
+英字（Plex Mono を横だけ縮めて線を補い、lievre の字形を足したもの）を土台に、日本語の範囲と Nerd Fonts の記号を組み合わせた6つがあります。どれも 400（Regular）・500（Medium）・600（SemiBold）の3つの太さがあります。
 
 | パッケージ | 書体名 | 日本語 | Nerd Fonts | 収録字数 | ttf | woff2 |
 |---|---|---|---|--:|--:|--:|
-| `lievre-term` | Lievre Term | なし | なし | 1,053 | 106 KB | 27 KB |
+| `lievre-term` | Lievre Term | なし | なし | 1,053 | 104 KB | 28 KB |
 | `lievre-term-nf` | Lievre Term NF | なし | あり | 11,677 | 2.2 MB | 938 KB |
-| `lievre-term-jp1` | Lievre Term JP1 | JIS 第1水準まで | なし | 5,661 | 1.0 MB | 462 KB |
+| `lievre-term-jp1` | Lievre Term JP1 | JIS 第1水準まで | なし | 5,661 | 1.0 MB | 463 KB |
 | `lievre-term-jp1-nf` | Lievre Term JP1 NF | JIS 第1水準まで | あり | 16,284 | 3.1 MB | 1.3 MB |
 | `lievre-term-jp` | Lievre Term JP | 全部 | なし | 16,108 | 3.7 MB | 1.7 MB |
 | `lievre-term-jp-nf` | Lievre Term JP NF | 全部 | あり | 26,731 | 5.8 MB | 2.6 MB |
@@ -64,24 +64,44 @@ lievre の私用領域 U+E500–U+E53F は、Nerd Fonts 3.5.1 が使っていな
 - Plex Sans JP の表意文字の字面の枠は -0.12〜0.88em（BASE テーブルの ideo。字の墨の枠 icfb・icft も -0.075〜0.835em）で、中央はベースラインの 0.38em 上です。
 - Plex Sans JP そのままの行の箱（ascent 1.06em、descent 0.44em）の中央は 0.31em 上なので、漢字は 0.07em 上に寄ります。
 - Lievre Term は ascent 0.98em、descent 0.22em にして、行の箱の中央を 0.38em 上に置きます。日本語の字形は動かしません（`JP_SHIFT = 0`）。
-- 英数字（Plex Mono を 5/6 に縮めた字）は、英大文字の高さ 0.582em の中央 0.291em が行の中央 0.38em に来るように、字形を 0.089em 上げます（`LATIN_SHIFT = 89`）。罫線・ブロック・lievre の字形はセルに合わせて描くので動かしません。
+- 英数字の字形も動かしません。英大文字の高さが本文と同じ 0.733em なので、英大文字の中央は本文と同じく行の中央の 0.013em 下に来ます。
 - Web の 'Lievre Sans' は `ascent-override: 113%; descent-override: 37%; line-gap-override: 0%` で、同じく中央が 0.38em 上に来ます（(1.13 − 0.37) / 2 = 0.38）。
 
 日本語の字形を動かさないのは、Web で本文（Lievre Sans）の中に等幅（Lievre Term）を並べたとき、ブラウザがベースラインで字をそろえるからです。行の箱のほうで直すので、等幅の漢字は本文の漢字と同じ高さに並びます。
 
-英数字だけは、本文と中央をそろえるかベースラインをそろえるかのどちらかしか選べません。等幅の英大文字（0.582em）は本文の英大文字より背が低いので、中央をそろえるとベースラインがずれます。Lievre Term は中央をそろえるほうを取りました。端末のセルの中でも、等幅の段落でも、本文の中に並べても、英数字・かな・漢字の見た目の中央が行の中央に来ます。代わりに、本文の中に並べた等幅の英数字のベースラインは、本文より 0.089em（16px で約 1.4px）上になります。
+英数字も、英大文字の高さを本文に合わせたので、本文の中に並べてもベースラインと高さの両方がそろいます（「99.95」+「%」、「1,280」+「円」のような数字と単位も、ずれません）。
 
 測り方は Web 側と同じで、Chromium の canvas に 10000px で描き、`measureText` から上寄りを (A − D − 墨の上 − (−墨の下)) / 2 で出しました（A・D は fontBoundingBox、墨は actualBoundingBox。正なら中央より下）。400 の値は次のとおりです。
 
 | 字 | Plex Sans JP そのまま | Lievre Sans | Lievre Term |
 |---|--:|--:|--:|
-| 漢字（永・国） | −0.074〜−0.078em | −0.006〜+0.019em | −0.006〜+0.021em |
+| 漢字（永・国） | −0.074〜−0.078em | −0.006〜+0.019em | −0.006〜+0.019em |
 | かな（あ） | −0.072〜−0.074em | −0.009em | −0.009em |
-| 英大文字・数字（H・0） | −0.061em | +0.013em | 0.000em |
+| 英大文字・数字（H・0） | −0.061em | +0.013em | +0.013em |
 
 Lievre Sans の列は、Plex Sans JP に `ascent-override: 113%; descent-override: 37%` を付けて同じページで測った値です。
 
-テストは、行の箱の中央が字面の枠の中央（0.38em）にあること、代表的な漢字の墨の中央がそこから 0.012em 以内、英大文字と数字の墨の中央が 0.006em 以内にあることを確かめます。数は [src/lievre_term/config.py](src/lievre_term/config.py) の `CELL_CENTER`・`ASCENT`・`DESCENT`・`JP_SHIFT`・`LATIN_SHIFT` です。
+テストは、行の箱の中央が字面の枠の中央（0.38em）にあること、代表的な漢字の墨の中央がそこから 0.012em 以内にあること、英大文字の高さが 0.733em でベースラインから立つことを確かめます。数は [src/lievre_term/config.py](src/lievre_term/config.py) の `CELL_CENTER`・`ASCENT`・`DESCENT`・`JP_SHIFT`・`LATIN_CAP` です。
+
+### 英数字の作り方
+
+Plex Mono（字幅 0.6em、英大文字の高さ 0.698em）を、字幅 0.5em・英大文字の高さ 0.733em にします。横は 5/6、縦は 1.05 倍で、横だけが縦の 0.79 倍に縮みます。そのまま縮めると、縦の線だけが細くなります。
+
+そこで、Plex Mono の太さを変えられる版（IBM Plex Mono Variable 1.0.0）から、字の点の x 座標と y 座標を別々の太さで取ります。同じ variable font の別の太さなので、点の数と並びは同じで、点ごとに x と y を組み合わせられます（[src/lievre_term/condense.py](src/lievre_term/condense.py)）。
+
+- x 座標は、縮めたあとの縦の線が、本文（Plex Sans JP）の同じ太さの縦の線の 93% になる太さから取ります。
+- y 座標は、縮めたあとの横の線が、本文の横の線の 93% になる太さから取ります。
+
+| 太さ | 本文の線（縦 / 横） | Lievre Term の線（縦 / 横） | x 座標の wght | y 座標の wght |
+|---|--:|--:|--:|--:|
+| 400 | 84 / 74 | 77 / 69 | 435 | 364 |
+| 500 | 113 / 100 | 105 / 92 | 574 | 471 |
+| 600 | 132 / 116 | 123 / 107 | 682 | 555 |
+
+線を本文より少し細い 93% にするのは、等幅の字は幅が狭く字の中の空きが小さいので、同じ太さの線でも本文より黒く見えるからです。本文と同じ濃さに見えるように、見比べて決めました（`STROKE_RATIO`）。
+
+罫線とブロック（U+2500–259F）は、この作り方ではなく、静的な Plex Mono を横 5/6・縦はセルいっぱいに伸ばして使います。どの太さでも線が同じで、隣のセルとつながるようにするためです。
+
 
 ## 幅の表
 

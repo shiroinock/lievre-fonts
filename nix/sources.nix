@@ -21,6 +21,15 @@ let
       inherit hash;
     };
   };
+  # 英数字は Plex Mono の太さを変えられる版から、縦と横を別の太さで取って組む（src/lievre_term/condense.py）。
+  monoVar = {
+    name = "mono-var/IBMPlexMonoVar-Roman.ttf";
+    path = fetchurl {
+      name = "IBMPlexMonoVar-Roman.ttf";
+      url = "${plex}/@ibm/plex-mono-variable@1.0.0/packages/plex-mono-variable/fonts/complete/ttf/IBM%20Plex%20Mono%20Var-Roman.ttf";
+      hash = "sha256-flFO46NZ2CsvVydR3CGE84CnIWApnAQLTJeKcJMBN0M=";
+    };
+  };
   nerdFonts = runCommand "nerd-fonts-symbols-3.5.1" {
     src = fetchurl {
       url = "https://github.com/ryanoasis/nerd-fonts/releases/download/v3.5.1/NerdFontsSymbolsOnly.tar.xz";
@@ -38,6 +47,7 @@ in
     (mono "IBMPlexMono-Regular.ttf" "sha256-fG+93KS3AL6Rj19hg9m9RGT6Qn/kNfC0gNd/4ruMWkM=")
     (mono "IBMPlexMono-Medium.ttf" "sha256-mPvXJ6rjQLI2lVh52r7U2ZGqyejpCzsqZ85KWSIcyXw=")
     (mono "IBMPlexMono-SemiBold.ttf" "sha256-8E18SI3ffR+pnyV078NAbqTL4XuxrzoauWD4TQyWoXI=")
+    monoVar
     (jp "IBMPlexSansJP-Regular.ttf" "sha256-AWhJOuFD0W5MDTdMCQse5eq57kdVNtLkKTaNvPxKar4=")
     (jp "IBMPlexSansJP-Medium.ttf" "sha256-7ZJXyUsKVAusVqD6pw7FVLGOpycfpPDTNRJYPdS/nAw=")
     (jp "IBMPlexSansJP-SemiBold.ttf" "sha256-OuF69zBikmsBOv3siUmSOorf1OyMT2iYdsCjWeY+TOs=")

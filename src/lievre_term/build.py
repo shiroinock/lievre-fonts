@@ -6,7 +6,8 @@
 字形は次の順に取る（先に取ったものが勝つ）。
 
   1. lievre 専用の字形（U+E500–E509）
-  2. IBM Plex Mono。5/6 に縮めて幅 500 にし、LATIN_SHIFT だけ上げる。罫線とブロック（U+2500–259F）は縦もセルに合わせる
+  2. IBM Plex Mono。横だけ縮めて線を補ったもの（condense.py）を、幅 500・英大文字の高さ 733 にする。
+     罫線とブロック（U+2500–259F）は静的な Plex Mono から取り、縦もセルに合わせる
   3. IBM Plex Sans JP（JP1・JP のとき）。JP_SHIFT だけ縦に動かす（既定は 0）。幅の表で 1 の字は半角に収める
   4. Symbols Nerd Font Mono（NF のとき）。Powerline の区切りはセルいっぱいに引き伸ばす
 
@@ -26,9 +27,9 @@ from fontTools.pens.ttGlyphPen import TTGlyphPen
 from fontTools.ttLib import TTFont, newTable
 from fontTools.ttLib.woff2 import compress
 
+from . import condense, jis, web
 from . import config as C
 from . import glyphs as G
-from . import jis, web
 from . import widths as W
 
 HEIGHT = C.ASCENT - C.DESCENT
@@ -37,9 +38,9 @@ PUA = (0xE000, 0xF8FF)
 
 
 class Source:
-    def __init__(self, path: Path, key: str):
+    def __init__(self, path: Path | TTFont, key: str):
         self.key = key
-        self.font = TTFont(path)
+        self.font = path if isinstance(path, TTFont) else TTFont(path)
         self.cmap = self.font.getBestCmap()
         self.glyph_set = self.font.getGlyphSet()
         self.hmtx = self.font['hmtx']
@@ -65,21 +66,28 @@ def scale_about(s, cx_from, cy_from, cx_to, cy_to):
     return (s, 0, 0, s, cx_to - cx_from * s, cy_to - cy_from * s)
 
 
-def place_mono(src: Source, cp, name, w):
-    adv = src.advance(name)
+def place_box(src: Source, cp, name, w):
+    """罫線とブロック。横は 5/6、縦はセルの高さいっぱいに。"""
+    if not 0x2500 <= cp <= 0x259F:
+        return None
     s = C.LATIN_SCALE
-    dy = C.LATIN_SHIFT
+    target = w * C.CELL
+    dx = (target - src.advance(name) * s) / 2
+    sy = HEIGHT / (C.MONO_BOX_TOP - C.MONO_BOX_BOTTOM)
+    return (s, 0, 0, sy, dx, C.DESCENT - C.MONO_BOX_BOTTOM * sy), target
+
+
+def place_mono(src: Source, cp, name, w):
+    """英数字。横は 5/6、縦は 733/698（線の太さは condense.py で補ってある）。"""
+    adv = src.advance(name)
+    sx, sy = C.LATIN_SX, C.LATIN_SY
     if adv == 0:
         # 結合文字など。幅の表でも 0 のときだけ残す（U+2028 などは表では 1 なので落とす）。
-        return ((s, 0, 0, s, 0, dy), 0) if w == 0 else None
+        return ((sx, 0, 0, sy, 0, 0), 0) if w == 0 else None
     if w == 0:
-        return (s, 0, 0, s, -adv * s, dy), 0
+        return (sx, 0, 0, sy, -adv * sx, 0), 0
     target = w * C.CELL
-    dx = (target - adv * s) / 2
-    if 0x2500 <= cp <= 0x259F:
-        sy = HEIGHT / (C.MONO_BOX_TOP - C.MONO_BOX_BOTTOM)
-        return (s, 0, 0, sy, dx, C.DESCENT - C.MONO_BOX_BOTTOM * sy), target
-    return (s, 0, 0, s, dx, dy), target
+    return (sx, 0, 0, sy, (target - adv * sx) / 2, 0), target
 
 
 def place_jp(src: Source, cp, name, w):
@@ -123,6 +131,8 @@ def source_epoch():
 
 def build_font(variant: C.Variant, weight: C.Weight, sources: Path, width: bytearray) -> TTFont:
     mono = Source(sources / f'mono/IBMPlexMono-{weight.mono}.ttf', 'mono')
+    latin_font, wx, wy = condense.condensed(sources / 'mono-var/IBMPlexMonoVar-Roman.ttf', weight.css)
+    latin = Source(latin_font, f'latin-{weight.css}')
     order = ['.notdef']
     glyf = {}
     hmtx = {}
@@ -140,14 +150,17 @@ def build_font(variant: C.Variant, weight: C.Weight, sources: Path, width: bytea
         return cache[key]
 
     # .notdef は Plex Mono のものを縮めて使う。
-    glyf['.notdef'] = mono.outline('.notdef', (C.LATIN_SCALE, 0, 0, C.LATIN_SCALE, 0, 0))
+    glyf['.notdef'] = latin.outline('.notdef', (C.LATIN_SX, 0, 0, C.LATIN_SY, 0, 0))
     hmtx['.notdef'] = C.CELL
 
     for cp, name in G.CODEPOINTS.items():
         gname = add('lievre', name, (1, 0, 0, 1, 0, 0), C.CELL, lambda n=name: G.glyph(n))
         cmap[cp] = gname
 
-    layers = [(mono, place_mono, lambda cp: not (PUA[0] <= cp <= PUA[1]))]
+    layers = [
+        (mono, place_box, lambda cp: True),
+        (latin, place_mono, lambda cp: not (PUA[0] <= cp <= PUA[1])),
+    ]
     if variant.cjk:
         jp = Source(sources / f'jp/IBMPlexSansJP-{weight.jp}.ttf', 'jp')
         layers.append((jp, place_jp, lambda cp: wanted_jp(variant, cp)))
@@ -165,6 +178,7 @@ def build_font(variant: C.Variant, weight: C.Weight, sources: Path, width: bytea
             transform, adv = placed
             cmap[cp] = add(src.key, name, transform, adv, lambda s=src, n=name, t=transform: s.outline(n, t))
 
+    print(f'  {weight.css}: 英数字の x 座標は wght {wx:.0f}、y 座標は wght {wy:.0f} から', flush=True)
     return assemble(variant, weight, order, glyf, hmtx, cmap, mono)
 
 
@@ -222,8 +236,8 @@ def assemble(variant, weight, order, glyf, hmtx, cmap, mono: Source):
         sTypoLineGap=0,
         usWinAscent=max(C.ASCENT, ymax),
         usWinDescent=max(-C.DESCENT, -ymin),
-        sxHeight=round(mono_os2.sxHeight * C.LATIN_SCALE),
-        sCapHeight=round(mono_os2.sCapHeight * C.LATIN_SCALE),
+        sxHeight=round(mono_os2.sxHeight * C.LATIN_SY),
+        sCapHeight=round(mono_os2.sCapHeight * C.LATIN_SY),
         panose=panose,
         ulCodePageRange1=(1 << 0) | ((1 << 17) if variant.cjk else 0),  # Latin 1 / JIS
         ulCodePageRange2=0,
@@ -232,8 +246,8 @@ def assemble(variant, weight, order, glyf, hmtx, cmap, mono: Source):
     fb.setupPost(
         keepGlyphNames=False,
         isFixedPitch=1,
-        underlinePosition=round(post.underlinePosition * C.LATIN_SCALE),
-        underlineThickness=round(post.underlineThickness * C.LATIN_SCALE),
+        underlinePosition=round(post.underlinePosition * C.LATIN_SY),
+        underlineThickness=round(post.underlineThickness * C.LATIN_SY),
     )
     font = fb.font
     font['OS/2'].recalcUnicodeRanges(font)

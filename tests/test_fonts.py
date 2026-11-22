@@ -13,9 +13,9 @@ from pathlib import Path
 import pytest
 from fontTools.ttLib import TTFont
 
+from lievre_term import condense, jis, web
 from lievre_term import config as C
 from lievre_term import glyphs as G
-from lievre_term import jis, web
 from lievre_term import widths as W
 
 OUT = Path(os.environ.get('LIEVRE_TERM_FONTS', 'result/share/lievre-term'))
@@ -222,9 +222,19 @@ def test_line_center_is_the_ideographic_center():
 
 
 @pytest.mark.parametrize(('variant', 'weight'), CASES, ids=IDS)
-def test_latin_sits_on_the_cell_center(variant, weight):
-    # 英大文字と数字の見た目の中央も行の中央に置く（LATIN_SHIFT）。
+def test_latin_matches_the_body_text(variant, weight):
+    # 英大文字の高さは本文（Plex Sans JP）と同じ 733、ベースラインは動かさない。
     f = font(variant, weight)
-    for ch in 'HE0':
-        _, y0, _, y1 = bounds(f, ord(ch))
-        assert abs((y0 + y1) / 2 - C.CELL_CENTER) <= 6, f'{ch} の中心 {(y0 + y1) / 2}'
+    _, y0, _, y1 = bounds(f, ord('H'))
+    assert (y0, y1) == (0, C.LATIN_CAP)
+    # 英大文字の中央は、本文と同じく行の中央の少し下（0.38 − 0.733 / 2 ≒ 0.013em）。
+    assert abs((y0 + y1) / 2 - C.CELL_CENTER) <= 15
+
+
+@pytest.mark.parametrize(('variant', 'weight'), CASES, ids=IDS)
+def test_latin_strokes_follow_the_body_text(variant, weight):
+    # 縦の線も横の線も、本文の同じ太さの線の STROKE_RATIO 倍（丸めの分だけ許す）。
+    v, h = condense.stems(font(variant, weight), font(variant, weight).getBestCmap()[ord('H')])
+    sans_v, sans_h = C.SANS_STEMS[weight.css]
+    assert abs(v - sans_v * C.STROKE_RATIO) <= 2, f'縦の線 {v}'
+    assert abs(h - sans_h * C.STROKE_RATIO) <= 2, f'横の線 {h}'
