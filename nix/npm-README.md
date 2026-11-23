@@ -15,4 +15,6 @@ lievre の書体です。SIL Open Font License 1.1（`LICENSES/OFL.txt`）。
 
 `widths.json` は Lievre Term の字の幅（セルの数）の表です。
 
+自分で `@font-face` を書くときは、woff2 を `@lievre/fonts/files/…` で指せます（ファイルの名前と `unicode-range` は CSS を見てください）。
+
 詳しくは https://github.com/shiroinock/lievre-fonts を見てください。
