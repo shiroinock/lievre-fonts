@@ -105,5 +105,5 @@ VARIANTS = {
 # 本文の書体。Plex Sans JP の字形とカーニングはそのままで、行の箱と名前だけを変える（sans.py）。
 SANS = Variant('lievre-sans', 'Lievre Sans', 'jp', False)
 
-VERSION = '0.1.0'
+VERSION = '0.1.1'
 SOURCES = 'IBM Plex Mono 2.5.0, IBM Plex Mono Variable 1.0.0, IBM Plex Sans JP 3.0.0, Nerd Fonts 3.5.1'

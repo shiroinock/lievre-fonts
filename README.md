@@ -152,7 +152,7 @@ Web 用には、Lievre Term と同じく `unicode-range` で分けた woff2 と 
 Web では、Lievre Sans・Lievre Term・Lievre Term JP の CSS と分けた woff2、幅の表、ライセンスを1つにまとめた `@lievre/fonts` を使います。`nix build .#npm` で作り、Releases に `lievre-fonts-<版>.tgz` として載せます。npm にはまだ公開していないので、Releases の URL を依存に書きます。
 
 ```sh
-npm install https://github.com/shiroinock/lievre-fonts/releases/download/v0.1.0/lievre-fonts-0.1.0.tgz
+npm install https://github.com/shiroinock/lievre-fonts/releases/download/v0.1.1/lievre-fonts-0.1.1.tgz
 ```
 
 ```css

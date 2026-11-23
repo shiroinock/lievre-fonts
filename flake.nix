@@ -32,7 +32,7 @@
         # フォントを組み立てる道具。
         tool = py.buildPythonApplication {
           pname = "lievre-term-build";
-          version = "0.1.0";
+          version = "0.1.1";
           pyproject = true;
           inherit src;
           build-system = [ py.setuptools ];
@@ -63,7 +63,7 @@
           id:
           pkgs.stdenvNoCC.mkDerivation {
             pname = id;
-            version = "0.1.0";
+            version = "0.1.1";
             dontUnpack = true;
             nativeBuildInputs = [ tool ];
             buildPhase = ''
@@ -95,7 +95,7 @@
         # Lievre Sans（本文の書体）。Plex Sans JP の行の箱と名前だけを変えたもの。
         sans = pkgs.stdenvNoCC.mkDerivation {
           pname = "lievre-sans";
-          version = "0.1.0";
+          version = "0.1.1";
           dontUnpack = true;
           nativeBuildInputs = [ tool ];
           buildPhase = ''
@@ -127,7 +127,7 @@
             web = name: "${all}/share/lievre-term/web/${name}";
             packageJson = builtins.toJSON {
               name = "@lievre/fonts";
-              version = "0.1.0";
+              version = "0.1.1";
               description = "lievre の書体（Lievre Sans・Lievre Term）の woff2 と @font-face";
               license = "OFL-1.1";
               repository = {
@@ -149,11 +149,14 @@
                 "./term.css" = "./lievre-term.css";
                 "./term-jp.css" = "./lievre-term-jp.css";
                 "./widths.json" = "./widths.json";
+                # The woff2 themselves, for an app that writes its own @font-face from them
+                # (lievre routes Japanese punctuation in monospace text to Lievre Sans).
+                "./files/*" = "./files/*";
                 "./package.json" = "./package.json";
               };
             };
           in
-          pkgs.runCommand "lievre-fonts-npm-0.1.0"
+          pkgs.runCommand "lievre-fonts-npm-0.1.1"
             {
               passAsFile = [ "packageJson" ];
               inherit packageJson;
@@ -172,7 +175,7 @@
               mkdir -p $out/share/lievre-fonts
               cp -r $p $out/share/lievre-fonts/npm
               # 同じ中身なら同じ .tgz になるように、時刻と持ち主をそろえる。
-              tar --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner -cf - $p | gzip -n > $out/lievre-fonts-0.1.0.tgz
+              tar --sort=name --mtime=@1 --owner=0 --group=0 --numeric-owner -cf - $p | gzip -n > $out/lievre-fonts-0.1.1.tgz
             '';
 
         # 字の幅の表。@lievre/tui が読む。

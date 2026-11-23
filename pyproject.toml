@@ -1,6 +1,6 @@
 [project]
 name = "lievre-term-build"
-version = "0.1.0"
+version = "0.1.1"
 description = "Lievre Term（lievre の端末用フォント）を組み立てる道具"
 license = "OFL-1.1"
 requires-python = ">=3.13"
