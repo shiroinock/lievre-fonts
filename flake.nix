@@ -149,8 +149,8 @@
                 "./term.css" = "./lievre-term.css";
                 "./term-jp.css" = "./lievre-term-jp.css";
                 "./widths.json" = "./widths.json";
-                # The woff2 themselves, for an app that writes its own @font-face from them
-                # (lievre routes Japanese punctuation in monospace text to Lievre Sans).
+                # woff2 そのもの。自分で @font-face を書くアプリが使う
+                # （lievre は等幅の中の和文の約物を Lievre Sans に回す）。
                 "./files/*" = "./files/*";
                 "./package.json" = "./package.json";
               };
