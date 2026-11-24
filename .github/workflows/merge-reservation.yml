@@ -20,10 +20,10 @@ permissions: {}
 
 jobs:
   reserve:
-    uses: shiroinock/workflows/.github/workflows/merge-reservation.yml@cf3f4ca70d5828616e52159b21d18f5311f0dcbe
+    uses: shiroinock/workflows/.github/workflows/merge-reservation.yml@f77b08ac922abfc245d5ddf65db437ee99592ee9
     permissions:
       contents: write
       pull-requests: write
       actions: write
     with:
-      workflows_ref: cf3f4ca70d5828616e52159b21d18f5311f0dcbe
+      workflows_ref: f77b08ac922abfc245d5ddf65db437ee99592ee9

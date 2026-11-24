@@ -2,7 +2,8 @@
 # Claude Code fixes the branch without running anything from it (source, config, versions and the
 # lockfile, rewritten without running package code) and pushes. When the update needs the
 # owner's decision, or it cannot fix it, it mentions the owner on the PR and labels it 人の手が要る.
-# The job lives in shiroinock/workflows; change it there, not here.
+# The job lives in shiroinock/workflows; change it there, not here. Pinned to a commit that was
+# read, like the other workflows that call it; Renovate raises the SHA in all of them together.
 name: Claude で依存の更新を直す
 
 on:
@@ -17,7 +18,7 @@ permissions: {}
 
 jobs:
   fix:
-    uses: shiroinock/workflows/.github/workflows/claude-fix-deps.yml@main # zizmor: ignore[unpinned-uses] the owner's own shared jobs, followed at main on purpose
+    uses: shiroinock/workflows/.github/workflows/claude-fix-deps.yml@f77b08ac922abfc245d5ddf65db437ee99592ee9
     permissions:
       contents: read
       pull-requests: write

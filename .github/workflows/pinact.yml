@@ -14,8 +14,8 @@ permissions: {}
 
 jobs:
   pinact:
-    uses: shiroinock/workflows/.github/workflows/pinact.yml@cf3f4ca70d5828616e52159b21d18f5311f0dcbe
+    uses: shiroinock/workflows/.github/workflows/pinact.yml@f77b08ac922abfc245d5ddf65db437ee99592ee9
     permissions:
       contents: read
     with:
-      workflows_ref: cf3f4ca70d5828616e52159b21d18f5311f0dcbe
+      workflows_ref: f77b08ac922abfc245d5ddf65db437ee99592ee9
