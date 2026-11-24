@@ -9,7 +9,7 @@ name: Claude で CI を直す
 on:
   # Runs from the default branch's copy of this file, with secrets; the job itself only takes
   # branches of this repository whose PR a person opened.
-  workflow_run:
+  workflow_run: # zizmor: ignore[dangerous-triggers] the job takes only this repository's PR branches
     workflows: [検査] # the name of the CI workflow to watch (.github/workflows/ci.yml)
     types: [completed]
 
